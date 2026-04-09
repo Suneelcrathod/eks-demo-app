@@ -1,0 +1,57 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # 1️⃣ Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2️⃣ Configure AWS
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    # 3️⃣ Login to ECR
+    - name: Login to ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    # 4️⃣ Build Docker Image
+    - name: Build Docker Image
+      run: |
+        docker build -t docker-container-testing ./Docker
+
+    # 5️⃣ Tag Image
+    - name: Tag Docker Image
+      run: |
+        docker tag docker-container-testing:latest \
+        ${{ steps.login-ecr.outputs.registry }}/docker-container-testing:latest
+
+    # 6️⃣ Push Image to ECR
+    - name: Push Image
+      run: |
+        docker push ${{ steps.login-ecr.outputs.registry }}/docker-container-testing:latest
+
+    # 7️⃣ Update kubeconfig
+    - name: Configure kubectl
+      run: |
+        aws eks update-kubeconfig --name my-eks-cluster --region us-east-1
+
+    # 8️⃣ Deploy to Kubernetes
+    - name: Deploy to EKS
+      run: |
+        kubectl apply -f Kubernetes/namespace.yaml
+        kubectl apply -f Kubernetes/deployment.yaml
+        kubectl apply -f Kubernetes/service.yaml
