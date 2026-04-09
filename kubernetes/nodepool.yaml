@@ -1,0 +1,19 @@
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: app-pool
+spec:
+  template:
+    metadata:
+      labels:
+        workload: app
+    spec:
+      nodeClassRef:
+        name: default
+      requirements:
+      - key: "kubernetes.io/arch"
+        operator: In
+        values: [ "amd64", "arm64" ]
+      - key: "node.kubernetes.io/instance-type"
+        operator: In
+        values: [ "t3.medium", "t3.large", "c6g.large" ]
