@@ -1,0 +1,33 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+    - echo Installing kubectl...
+    - curl -o kubectl https://amazon-eks.s3.us-east-1.amazonaws.com/1.27.0/2023-11-14/bin/linux/amd64/kubectl
+    - chmod +x kubectl
+    - mv kubectl /usr/local/bin/
+
+  pre_build:
+    commands:
+    - echo Logging in to ECR...
+    - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 143315839705.dkr.ecr.us-east-1.amazonaws.com
+
+  build:
+    commands:
+    - echo Building Docker image...
+    - docker build -t my-repo-kubernets-test ./Docker
+    - docker tag my-repo-kubernets-test:latest 143315839705.dkr.ecr.us-east-1.amazonaws.com/my-repo-kubernets-test:latest
+
+  post_build:
+    commands:
+    - echo Pushing image to ECR...
+    - docker push 143315839705.dkr.ecr.us-east-1.amazonaws.com/my-repo-kubernets-test:latest
+
+    - echo Connecting to EKS...
+    - aws eks update-kubeconfig --region us-east-1 --name my-eks-cluster
+
+    - echo Deploying to Kubernetes...
+    - kubectl apply -f kubernetes/namespace.yaml
+    - kubectl apply -f kubernetes/deployment.yaml
+    - kubectl apply -f kubernetes/service.yaml
