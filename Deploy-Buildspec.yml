@@ -1,0 +1,18 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+    - curl -o kubectl https://amazon-eks.s3.us-east-1.amazonaws.com/latest/bin/linux/amd64/kubectl
+    - chmod +x kubectl
+    - mv kubectl /usr/local/bin/
+
+  pre_build:
+    commands:
+    - aws eks update-kubeconfig --region us-east-1 --name my-eks-cluster
+
+  build:
+    commands:
+    - kubectl apply -f kubernetes/namespace.yaml
+    - kubectl apply -f kubernetes/deployment.yaml
+    - kubectl apply -f kubernetes/service.yaml

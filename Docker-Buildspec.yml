@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+    - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 143315839705.dkr.ecr.us-east-1.amazonaws.com
+
+  build:
+    commands:
+    - docker build -t my-kubernetes-repo ./Docker
+    - docker tag my-kubernetes-repo:latest 143315839705.dkr.ecr.us-east-1.amazonaws.com/my-kubernetes-repo:latest
+
+  post_build:
+    commands:
+    - docker push 143315839705.dkr.ecr.us-east-1.amazonaws.com/my-kubernetes-repo:latest
